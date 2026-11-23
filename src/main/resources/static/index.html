@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101014" />
+    <meta name="description" content="PAPERLY — chat with your PDFs using AI." />
+    <title>PAPERLY — Chat with your documents</title>
+    <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="#top" aria-label="PAPERLY home">
+            <span class="brand-mark"><span></span><span></span><span></span></span>
+            <span class="brand-name">paperly<span class="brand-period">.</span></span>
+        </a>
+
+        <button class="workspace-switcher" type="button" aria-label="Current workspace">
+            <span class="workspace-avatar">P</span>
+            <span class="workspace-copy"><strong>Personal workspace</strong><small>Free workspace</small></span>
+            <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
+        </button>
+
+        <div class="side-label">WORKSPACE</div>
+        <nav class="side-nav" aria-label="Main navigation">
+            <button class="nav-item active" type="button" data-scroll="chat-section">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-6.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>
+                <span>AI chat</span><span class="nav-shortcut">⌘ K</span>
+            </button>
+            <button class="nav-item" type="button" data-scroll="library-section">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.75h9l5 5v11.5H5z"/><path d="M14 3.75v5h5M8 13h8M8 16.5h8"/></svg>
+                <span>My documents</span><span class="nav-count" id="nav-doc-count">0</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-divider"></div>
+        <div class="side-label side-label-row"><span>YOUR SPACE</span><span class="tiny-dot"></span></div>
+        <div class="sidebar-note">
+            <div class="note-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.64 5.64l2.12 2.12m8.48 8.48 2.12 2.12m0-12.72-2.12 2.12m-8.48 8.48-2.12 2.12"/><circle cx="12" cy="12" r="4"/></svg></div>
+            <strong>Your knowledge, connected.</strong>
+            <p>Upload a PDF and ask questions. PAPERLY finds the relevant context for you.</p>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="connection-card">
+                <span class="connection-indicator"></span>
+                <span><strong>Spring Boot API</strong><small>Endpoints configured</small></span>
+                <span class="connection-more" title="Uses this app's origin">•••</span>
+            </div>
+            <div class="profile-row">
+                <div class="profile-avatar">A</div>
+                <div class="profile-copy"><strong>Your workspace</strong><small>Document assistant</small></div>
+                <button class="icon-button profile-menu" type="button" title="Workspace options" aria-label="Workspace options"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="top">
+        <header class="topbar">
+            <button class="mobile-menu icon-button" id="mobile-menu" type="button" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+            <div class="breadcrumbs"><span>Workspace</span><svg viewBox="0 0 20 20"><path d="m7 4 6 6-6 6"/></svg><strong>AI chat</strong></div>
+            <div class="topbar-actions">
+                <span class="topbar-date" id="today-label"></span>
+                <span class="topbar-divider"></span>
+                <button class="top-icon-btn" type="button" id="new-chat-btn" title="Start a new chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>New chat</span></button>
+                <div class="top-avatar">A</div>
+            </div>
+        </header>
+
+        <div class="page-wrap">
+            <section class="welcome-row" aria-labelledby="welcome-title">
+                <div>
+                    <div class="eyebrow"><span class="eyebrow-spark">✦</span> YOUR AI DOCUMENT WORKSPACE</div>
+                    <h1 id="welcome-title">Your documents.<br /><span>In conversation.</span></h1>
+                    <p class="welcome-subtitle">Drop in a PDF, ask what matters, and get answers grounded in your own content.</p>
+                </div>
+                <div class="welcome-art" aria-hidden="true">
+                    <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+                    <div class="art-glow"></div>
+                    <div class="art-doc"><div class="art-doc-fold"></div><span class="art-doc-line line-one"></span><span class="art-doc-line line-two"></span><span class="art-doc-line line-three"></span><span class="art-doc-tag">PDF</span></div>
+                    <div class="art-spark spark-one">✦</div><div class="art-spark spark-two">✧</div><div class="art-spark spark-three">·</div>
+                    <div class="art-pill">AI <span>✦</span></div>
+                </div>
+            </section>
+
+            <section class="upload-section" id="library-section" aria-labelledby="upload-heading">
+                <div class="section-heading">
+                    <div><span class="section-kicker">01 / KNOWLEDGE</span><h2 id="upload-heading">Bring your knowledge in</h2></div>
+                    <span class="section-hint">PDF files only <span class="hint-separator">·</span> Up to 20 MB</span>
+                </div>
+                <div class="upload-layout">
+                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a PDF to upload">
+                        <input id="pdf-input" type="file" accept="application/pdf,.pdf" hidden />
+                        <div class="upload-icon-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M5 14.5v4A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-4"/></svg></div>
+                        <div class="dropzone-copy"><strong>Drop your PDF right here</strong><span>or <button class="text-button" id="browse-btn" type="button">browse files</button> from your device</span></div>
+                        <div class="dropzone-meta"><span class="pdf-mini">PDF</span><span>PDF document</span><span class="meta-dot">·</span><span>Max 20 MB</span></div>
+                        <div class="selected-file" id="selected-file" hidden>
+                            <span class="file-badge">PDF</span><span class="selected-file-name" id="selected-file-name"></span><button class="remove-file" id="remove-file" type="button" aria-label="Remove selected file">×</button>
+                        </div>
+                        <div class="upload-progress" id="upload-progress" hidden><div class="progress-track"><span id="progress-fill"></span></div><span id="progress-label">Uploading… 0%</span></div>
+                        <button class="upload-button" id="upload-btn" type="button" disabled><span>Upload PDF</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+                    </div>
+                    <div class="upload-aside">
+                        <div class="aside-stat"><div class="aside-stat-icon purple"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg></div><div><strong>One source of truth</strong><span>Your PDF becomes searchable context for every question.</span></div></div>
+                        <div class="aside-stat"><div class="aside-stat-icon mint"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Grounded answers</strong><span>Responses are based on the information retrieved from your documents.</span></div></div>
+                        <div class="privacy-note"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg><span>Files are sent to your configured Spring Boot backend.</span></div>
+                    </div>
+                </div>
+                <div class="upload-feedback" id="upload-feedback" role="status" aria-live="polite" hidden></div>
+                <div class="documents-panel" id="documents-panel" hidden>
+                    <div class="documents-panel-head"><div><span class="section-kicker">YOUR LIBRARY</span><h3>Recently added</h3></div><span class="doc-total" id="doc-total">0 files</span></div>
+                    <div class="document-list" id="document-list"></div>
+                </div>
+            </section>
+
+            <section class="chat-section" id="chat-section" aria-labelledby="chat-heading">
+                <div class="section-heading chat-heading-row">
+                    <div><span class="section-kicker">02 / CONVERSATION</span><h2 id="chat-heading">Ask your documents</h2></div>
+                    <div class="chat-context"><span class="context-dot"></span><span id="context-label">Ready for your questions</span></div>
+                </div>
+                <div class="chat-card">
+                    <div class="chat-toolbar"><div class="chat-assistant"><div class="assistant-avatar"><span class="assistant-spark">✦</span></div><div><strong>Paperly assistant</strong><small><span class="live-dot"></span> AI document intelligence</small></div></div><div class="chat-toolbar-right"><span class="model-label"><span class="model-dot"></span> RAG mode</span><button class="icon-button clear-chat-btn" type="button" id="clear-chat-btn" title="Clear conversation" aria-label="Clear conversation"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>
+                    <div class="chat-messages" id="chat-messages" aria-live="polite">
+                        <div class="empty-chat" id="empty-chat">
+                            <div class="empty-orb"><span>✦</span><i></i></div>
+                            <span class="empty-kicker">A LITTLE CURIOSITY GOES A LONG WAY</span>
+                            <h3>What would you like<br />to understand today?</h3>
+                            <p>Ask a question about your uploaded PDF. I'll look for relevant passages and shape them into a clear answer.</p>
+                            <div class="suggestion-list">
+                                <button class="suggestion" type="button" data-prompt="Summarize the main points of the document."><span class="suggestion-icon">✧</span><span>Give me a summary of this document</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+                                <button class="suggestion" type="button" data-prompt="What are the most important facts and takeaways?"><span class="suggestion-icon">⌁</span><span>What are the key takeaways?</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+                                <button class="suggestion" type="button" data-prompt="Explain the most complex concept in simple terms."><span class="suggestion-icon">◎</span><span>Explain a complex idea simply</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-composer-wrap">
+                        <form class="chat-composer" id="chat-form">
+                            <textarea id="question-input" rows="1" placeholder="Ask anything about your documents…" aria-label="Your question" required></textarea>
+                            <div class="composer-bottom"><span class="composer-tip"><kbd>Enter</kbd> to send <span>·</span> <kbd>Shift + Enter</kbd> for a new line</span><button class="send-button" id="send-btn" type="submit" aria-label="Send message" disabled><svg viewBox="0 0 24 24"><path d="m21 3-7.5 18-3.7-7.8L2 9.5 21 3Z"/><path d="M21 3 9.8 13.2"/></svg></button></div>
+                        </form>
+                        <p class="disclaimer">PAPERLY can make mistakes. Verify important details in your source document.</p>
+                    </div>
+                </div>
+            </section>
+            <footer class="footer"><span>Made for the way you think.</span><span class="footer-brand">paperly<span>.</span> <b>✦</b></span></footer>
+        </div>
+    </main>
+</div>
+<div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+<script src="/app.js" defer></script>
+</body>
+</html>
