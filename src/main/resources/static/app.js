@@ -7,6 +7,11 @@
     'use strict';
 
     const API = {
+        csrf: '/api/auth/csrf',
+        register: '/api/auth/register',
+        login: '/api/auth/login',
+        me: '/api/auth/me',
+        logout: '/api/auth/logout',
         upload: '/api/documents/upload',
         chat: '/api/chat'
     };
@@ -14,6 +19,24 @@
 
     const $ = (selector) => document.querySelector(selector);
     const elements = {
+        authScreen: $('#auth-screen'),
+        appShell: $('#app-shell'),
+        authFeedback: $('#auth-feedback'),
+        loginForm: $('#login-form'),
+        registerForm: $('#register-form'),
+        loginEmail: $('#login-email'),
+        loginPassword: $('#login-password'),
+        registerName: $('#register-name'),
+        registerEmail: $('#register-email'),
+        registerPassword: $('#register-password'),
+        registerConfirmPassword: $('#register-confirm-password'),
+        loginSubmit: $('#login-submit'),
+        registerSubmit: $('#register-submit'),
+        profileName: $('#profile-name'),
+        profileEmail: $('#profile-email'),
+        profileAvatar: $('#profile-avatar'),
+        topAvatar: $('#top-avatar'),
+        logoutButton: $('#logout-btn'),
         today: $('#today-label'),
         mobileMenu: $('#mobile-menu'),
         sidebar: $('#sidebar'),
@@ -47,6 +70,9 @@
     let isUploading = false;
     let isSending = false;
     let uploadedDocuments = [];
+    let csrfDetails = null;
+    let currentUser = null;
+    let authMode = 'login';
 
     // Display today's date using the visitor's local timezone.
     elements.today.textContent = new Intl.DateTimeFormat(undefined, {
@@ -98,6 +124,234 @@
             try { return await response.json(); } catch (_) { return null; }
         }
         try { return await response.text(); } catch (_) { return null; }
+    }
+
+    function setAuthFeedback(message, type = 'error') {
+        elements.authFeedback.hidden = !message;
+        elements.authFeedback.className = `auth-feedback ${type}`;
+        elements.authFeedback.textContent = message || '';
+    }
+
+    function setFormBusy(form, busy, labelWhenBusy) {
+        const button = form.querySelector('button[type="submit"]');
+        if (!button) return;
+        button.disabled = busy;
+        const label = button.querySelector('span');
+        if (label) {
+            if (busy) {
+                button.dataset.originalLabel = label.textContent;
+                label.textContent = labelWhenBusy;
+            } else if (button.dataset.originalLabel) {
+                label.textContent = button.dataset.originalLabel;
+                delete button.dataset.originalLabel;
+            }
+        }
+    }
+
+    async function refreshCsrfToken() {
+        const response = await fetch(API.csrf, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        });
+        const payload = await readResponse(response);
+        if (!response.ok || !payload || !payload.token || !payload.headerName) {
+            throw new Error(getErrorMessage(payload, `Could not obtain a CSRF token (HTTP ${response.status}).`));
+        }
+        csrfDetails = {
+            headerName: payload.headerName,
+            token: payload.token
+        };
+        return csrfDetails;
+    }
+
+    async function ensureCsrfToken() {
+        if (!csrfDetails) return refreshCsrfToken();
+        return csrfDetails;
+    }
+
+    async function apiRequest(url, options = {}) {
+        const method = (options.method || 'GET').toUpperCase();
+        const headers = new Headers(options.headers || {});
+        if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+            const csrf = await ensureCsrfToken();
+            headers.set(csrf.headerName, csrf.token);
+        }
+        return fetch(url, {
+            ...options,
+            method,
+            headers,
+            credentials: 'same-origin'
+        });
+    }
+
+    function switchAuthMode(mode) {
+        authMode = mode === 'register' ? 'register' : 'login';
+        elements.loginForm.hidden = authMode !== 'login';
+        elements.registerForm.hidden = authMode !== 'register';
+        document.querySelectorAll('[data-auth-mode]').forEach((button) => {
+            const active = button.dataset.authMode === authMode;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-selected', String(active));
+        });
+        $('#auth-title').innerHTML = authMode === 'login'
+            ? 'Your knowledge,<br><span>in good hands.</span>'
+            : 'Make space for<br><span>better thinking.</span>';
+        setAuthFeedback('');
+    }
+
+    function showAuthScreen(message = '') {
+        currentUser = null;
+        elements.appShell.hidden = true;
+        elements.authScreen.hidden = false;
+        switchAuthMode('login');
+        if (message) setAuthFeedback(message, 'error');
+    }
+
+    function showWorkspace(user) {
+        currentUser = user || {};
+        const displayName = currentUser.name || currentUser.email || 'Your account';
+        const initial = displayName.trim().charAt(0).toUpperCase() || 'U';
+        elements.profileName.textContent = displayName;
+        elements.profileEmail.textContent = currentUser.email || 'Signed in';
+        elements.profileAvatar.textContent = initial;
+        elements.topAvatar.textContent = initial;
+        elements.authScreen.hidden = true;
+        elements.appShell.hidden = false;
+    }
+
+    function handleSessionExpired() {
+        csrfDetails = null;
+        uploadedDocuments = [];
+        renderDocuments();
+        clearConversation();
+        showAuthScreen('Your session has expired. Please sign in again.');
+    }
+
+    async function initializeAuthentication() {
+        showAuthScreen();
+        try {
+            await refreshCsrfToken();
+            const response = await fetch(API.me, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            });
+            const payload = await readResponse(response);
+            if (response.ok) {
+                showWorkspace(payload);
+            } else if (response.status === 401 || response.status === 403) {
+                showAuthScreen();
+            } else {
+                showAuthScreen(getErrorMessage(payload, `Could not check your session (HTTP ${response.status}).`));
+            }
+        } catch (error) {
+            showAuthScreen('Cannot connect to PAPERLY authentication. Make sure Spring Boot is running and the /api/auth/csrf endpoint is available.');
+        }
+    }
+
+    async function registerAccount(event) {
+        event.preventDefault();
+        const name = elements.registerName.value.trim();
+        const email = elements.registerEmail.value.trim();
+        const password = elements.registerPassword.value;
+        const confirmPassword = elements.registerConfirmPassword.value;
+
+        if (password.length < 8) {
+            setAuthFeedback('Password must contain at least 8 characters.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setAuthFeedback('Your passwords do not match.');
+            return;
+        }
+
+        setAuthFeedback('');
+        setFormBusy(elements.registerForm, true, 'Creating account…');
+        try {
+            const response = await apiRequest(API.register, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const payload = await readResponse(response);
+            if (!response.ok) {
+                throw new Error(getErrorMessage(payload, `Registration failed (HTTP ${response.status}).`));
+            }
+            elements.loginEmail.value = email;
+            elements.loginPassword.value = '';
+            switchAuthMode('login');
+            setAuthFeedback('Account created successfully. Please sign in with your new account.', 'success');
+        } catch (error) {
+            setAuthFeedback(error instanceof Error ? error.message : 'Could not create your account.');
+        } finally {
+            setFormBusy(elements.registerForm, false);
+        }
+    }
+
+    async function signIn(event) {
+        event.preventDefault();
+        const email = elements.loginEmail.value.trim();
+        const password = elements.loginPassword.value;
+        setAuthFeedback('');
+        setFormBusy(elements.loginForm, true, 'Signing in…');
+        try {
+            const response = await apiRequest(API.login, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const payload = await readResponse(response);
+            if (!response.ok) {
+                throw new Error(getErrorMessage(payload, `Sign in failed (HTTP ${response.status}).`));
+            }
+
+            // Spring Security can rotate/clear CSRF state on authentication; fetch a fresh token.
+            await refreshCsrfToken();
+            const meResponse = await fetch(API.me, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            });
+            const me = await readResponse(meResponse);
+            if (!meResponse.ok) {
+                throw new Error(getErrorMessage(me, 'Login succeeded, but the authenticated session could not be verified.'));
+            }
+            showWorkspace(me || payload);
+            showToast(`Welcome${me && me.name ? `, ${me.name}` : ''}!`, 'success');
+        } catch (error) {
+            csrfDetails = null;
+            setAuthFeedback(error instanceof Error ? error.message : 'Sign in failed. Please try again.');
+        } finally {
+            setFormBusy(elements.loginForm, false);
+        }
+    }
+
+    async function signOut() {
+        elements.logoutButton.disabled = true;
+        try {
+            const response = await apiRequest(API.logout, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok && response.status !== 401) {
+                const payload = await readResponse(response);
+                throw new Error(getErrorMessage(payload, `Sign out failed (HTTP ${response.status}).`));
+            }
+            csrfDetails = null;
+            uploadedDocuments = [];
+            renderDocuments();
+            clearConversation();
+            showAuthScreen('You have been signed out.');
+            try { await refreshCsrfToken(); } catch (_) { /* next page load can refresh */ }
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Could not sign out.', 'error');
+        } finally {
+            elements.logoutButton.disabled = false;
+        }
     }
 
     function selectFile(file) {
@@ -182,8 +436,11 @@
         });
     }
 
-    function uploadPdf() {
+    async function uploadPdf() {
         if (!selectedFile || isUploading) return;
+        let csrf;
+        try { csrf = await ensureCsrfToken(); }
+        catch (error) { setUploadFeedback(error.message || "Could not prepare secure upload.", "error"); return; }
         isUploading = true;
         clearUploadFeedback();
         elements.uploadButton.disabled = true;
@@ -198,6 +455,7 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', API.upload, true);
         xhr.withCredentials = true;
+        xhr.setRequestHeader(csrf.headerName, csrf.token);
 
         xhr.upload.addEventListener('progress', (event) => {
             if (event.lengthComputable) setProgress((event.loaded / event.total) * 100);
@@ -209,6 +467,10 @@
             try { payload = xhr.responseText ? JSON.parse(xhr.responseText) : null; }
             catch (_) { payload = xhr.responseText; }
 
+            if (xhr.status === 401) {
+                handleSessionExpired();
+                return;
+            }
             if (xhr.status >= 200 && xhr.status < 300) {
                 elements.progressFill.style.width = '100%';
                 elements.progressLabel.textContent = 'PDF processed successfully';
@@ -390,13 +652,17 @@
         const thinkingRow = addMessage('assistant', '', { typing: true });
 
         try {
-            const response = await fetch(API.chat, {
+            const response = await apiRequest(API.chat, {
                 method: 'POST',
-                credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ question: trimmedQuestion })
             });
             const payload = await readResponse(response);
+            if (response.status === 401) {
+                thinkingRow.remove();
+                handleSessionExpired();
+                return;
+            }
             if (!response.ok) {
                 throw new Error(getErrorMessage(payload, `Chat request failed (HTTP ${response.status}).`));
             }
@@ -442,6 +708,14 @@
         autoResizeTextarea();
         showToast('Conversation cleared. Your uploaded PDFs are still available.');
     }
+
+    // Authentication screen events.
+    document.querySelectorAll('[data-auth-mode]').forEach((button) => {
+        button.addEventListener('click', () => switchAuthMode(button.dataset.authMode));
+    });
+    elements.loginForm.addEventListener('submit', signIn);
+    elements.registerForm.addEventListener('submit', registerAccount);
+    elements.logoutButton.addEventListener('click', signOut);
 
     // File picker and drag-and-drop.
     elements.browse.addEventListener('click', (event) => {
@@ -522,10 +796,14 @@
         }
     });
     document.addEventListener('keydown', (event) => {
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k'
+            && !elements.appShell.hidden) {
             event.preventDefault();
             elements.questionInput.focus();
         }
         if (event.key === 'Escape') elements.sidebar.classList.remove('open');
     });
+
+    // Only reveal the workspace after the backend confirms an authenticated session.
+    initializeAuthentication();
 })();
