@@ -9,7 +9,48 @@
     <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-<div class="app-shell">
+<main class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+    <div class="auth-glow auth-glow-one"></div>
+    <div class="auth-glow auth-glow-two"></div>
+    <section class="auth-card">
+        <a class="auth-brand" href="/" aria-label="PAPERLY home">
+            <span class="brand-mark"><span></span><span></span><span></span></span>
+            <span class="brand-name">paperly<span class="brand-period">.</span></span>
+        </a>
+        <div class="auth-intro">
+            <span class="auth-kicker">YOUR PRIVATE AI WORKSPACE</span>
+            <h1 id="auth-title">Your knowledge,<br><span>in good hands.</span></h1>
+            <p>Sign in to your personal document space, or create an account to get started.</p>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+            <button class="auth-tab active" type="button" id="show-login" data-auth-mode="login" role="tab" aria-selected="true">Sign in</button>
+            <button class="auth-tab" type="button" id="show-register" data-auth-mode="register" role="tab" aria-selected="false">Create account</button>
+        </div>
+        <form id="login-form" class="auth-form" autocomplete="on">
+            <label for="login-email">Email address</label>
+            <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required maxlength="190">
+            <label for="login-password">Password</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button class="auth-submit" id="login-submit" type="submit"><span>Sign in to PAPERLY</span><span aria-hidden="true">↗</span></button>
+        </form>
+        <form id="register-form" class="auth-form" autocomplete="on" hidden>
+            <label for="register-name">Full name</label>
+            <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Your name" required maxlength="100">
+            <label for="register-email">Email address</label>
+            <input id="register-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="190">
+            <label for="register-password">Create password</label>
+            <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required>
+            <label for="register-confirm-password">Confirm password</label>
+            <input id="register-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password" minlength="8" required>
+            <button class="auth-submit" id="register-submit" type="submit"><span>Create my account</span><span aria-hidden="true">↗</span></button>
+        </form>
+        <div class="auth-feedback" id="auth-feedback" role="status" aria-live="polite" hidden></div>
+        <p class="auth-footnote"><span class="auth-lock">⌑</span> Your documents and conversations belong to your account.</p>
+    </section>
+    <p class="auth-copyright">PAPERLY <span>✦</span> A calmer way to work with documents.</p>
+</main>
+
+<div class="app-shell" id="app-shell" hidden>
     <aside class="sidebar" id="sidebar">
         <a class="brand" href="#top" aria-label="PAPERLY home">
             <span class="brand-mark"><span></span><span></span><span></span></span>
@@ -49,9 +90,9 @@
                 <span class="connection-more" title="Uses this app's origin">•••</span>
             </div>
             <div class="profile-row">
-                <div class="profile-avatar">A</div>
-                <div class="profile-copy"><strong>Your workspace</strong><small>Document assistant</small></div>
-                <button class="icon-button profile-menu" type="button" title="Workspace options" aria-label="Workspace options"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+                <div class="profile-avatar" id="profile-avatar">U</div>
+                <div class="profile-copy"><strong id="profile-name">Your account</strong><small id="profile-email">Signed in</small></div>
+                <button class="logout-button" id="logout-btn" type="button" title="Sign out" aria-label="Sign out">↗</button>
             </div>
         </div>
     </aside>
@@ -64,7 +105,7 @@
                 <span class="topbar-date" id="today-label"></span>
                 <span class="topbar-divider"></span>
                 <button class="top-icon-btn" type="button" id="new-chat-btn" title="Start a new chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>New chat</span></button>
-                <div class="top-avatar">A</div>
+                <div class="top-avatar" id="top-avatar">U</div>
             </div>
         </header>
 
